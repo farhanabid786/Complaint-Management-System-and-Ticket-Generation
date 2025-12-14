@@ -2040,7 +2040,7 @@ def main_app():
         st.rerun()
 
 # Run the main app logic
-if _name_ == "_main_":
+if __name__ == "__main__":
     try:
         main_app()
     except Exception as e:
