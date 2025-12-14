@@ -1049,27 +1049,30 @@ def categorize_query(query):
     else:
         return "default"
 
+# ==========================
+# GEMINI CONFIG (ONCE)
+# ==========================
+if "GEMINI_READY" not in st.session_state:
+    try:
+        genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+        st.session_state["GEMINI_READY"] = True
+    except Exception as e:
+        st.session_state["GEMINI_READY"] = False
+        print("Gemini configuration failed:", e)
+
+
 # Placeholder/Mock ask_gemini if not configured
 def ask_gemini(prompt):
-    # This is a mock implementation if genai is not configured or fails
-    # print("Mock Gemini call:", prompt[:100] + "...")
+    if not st.session_state.get("GEMINI_READY"):
+        return "NO_ANSWER"
+
     try:
-        # Attempt to get the real API key from secrets
-        api_key = st.secrets["GOOGLE_API_KEY"]
-        if api_key is None:
-             # print("Warning: Google API Key not found in secrets. Using mock Gemini.")
-             raise ValueError("API key not found in secrets.")
-
-
-        # Re-configure genai with the actual API key if it's not already configured
-        # This handles cases where the script might rerun without the secrets being re-read at the top level
-        try:
-             current_config = genai.configure()
-             if not hasattr(current_config, 'api_key') or current_config.api_key != api_key:
-                  genai.configure(api_key=api_key)
-        except Exception as config_error:
-             print(f"Warning: Could not re-configure genai API key: {config_error}. Proceeding if already configured.")
-             # If re-configuration fails, assume it might be configured from a previous run
+        model = genai.GenerativeModel("gemini-1.5-pro")
+        response = model.generate_content(prompt)
+        return response.text
+    # except Exception as e:
+    #     print("Gemini API error:", e)
+    #     return "NO_ANSWER"
 
 
     except Exception as e:
