@@ -13,8 +13,8 @@ import pandas as pd # Import pandas for CSV export
 import smtplib # Import smtplib for sending emails
 import ssl # Import ssl for secure connection
 
-import google.generativeai
-print("Using OLD SDK:", google.generativeai.__version__)
+# import google.generativeai
+# print("Using OLD SDK:", google.generativeai.__version__)
 
 # Configure Generative AI (replace with your API key or use secrets manager)
 # genai.configure(api_key="YOUR_API_KEY")
