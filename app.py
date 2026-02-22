@@ -280,23 +280,27 @@ def categorize_query(query):
         return "default"
 
 #ask gemeni
+from google import genai
+
 def ask_gemini(prompt):
     try:
-        api_key = st.secrets["GOOGLE_API_KEY"]
+        api_key = st.secrets.get("GOOGLE_API_KEY")
 
-        genai.configure(api_key=api_key)
-
-        model = genai.GenerativeModel("gemini-pro")
-
-        response = model.generate_content(prompt)
-
-        if response and response.text:
-            return response.text.strip()
-        else:
+        if not api_key:
+            st.error("GOOGLE_API_KEY not found.")
             return None
 
+        client = genai.Client(api_key=api_key)
+
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+
+        return response.text
+
     except Exception as e:
-        print("Gemini API Error:", e)
+        st.error(f"Gemini API Error: {e}")
         return None
 # Placeholder/Mock ask_gemini if not configured
 # def ask_gemini(prompt):
