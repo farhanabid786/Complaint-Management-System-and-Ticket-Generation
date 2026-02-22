@@ -3,3 +3,4 @@ scikit-learn
 numpy
 faiss-cpu
 google-generativeai
+google-genai
