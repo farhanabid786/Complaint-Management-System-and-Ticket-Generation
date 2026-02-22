@@ -278,13 +278,15 @@ def categorize_query(query):
         return "cancellation"
     else:
         return "default"
-        
+
+#ask gemeni
 def ask_gemini(prompt):
     try:
         api_key = st.secrets.get("GOOGLE_API_KEY")
 
         if not api_key:
-            raise ValueError("GOOGLE_API_KEY not found in Streamlit secrets.")
+            st.error("GOOGLE_API_KEY not found in Streamlit secrets.")
+            return None
 
         genai.configure(api_key=api_key)
 
@@ -292,15 +294,17 @@ def ask_gemini(prompt):
 
         response = model.generate_content(prompt)
 
+        st.write("DEBUG Gemini raw response:", response)
+
         if response and response.text:
             return response.text.strip()
         else:
+            st.error("Gemini returned empty response.")
             return None
 
     except Exception as e:
-        print("Gemini API Error:", e)
+        st.error(f"Gemini API Error: {e}")
         return None
-        
 # Placeholder/Mock ask_gemini if not configured
 # def ask_gemini(prompt):
 #     # This is a mock implementation if genai is not configured or fails
