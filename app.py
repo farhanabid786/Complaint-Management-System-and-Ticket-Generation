@@ -1115,7 +1115,7 @@ if st.button("Submit Query"):
     # --- Display FAQs ---
     st.header("Frequently Asked Questions (FAQs)")
     # Access the global docs list from the main script
-    global docs
+    # global docs
     if docs: # Check if docs list is not empty
         for i, faq in enumerate(docs):
             # Split FAQ into question and answer for better formatting if possible
