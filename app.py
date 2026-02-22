@@ -6,7 +6,6 @@ from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import faiss
-import google.generativeai as genai
 import sys
 from io import StringIO
 import sqlite3 # Import the sqlite3 library
