@@ -286,7 +286,7 @@ def ask_gemini(prompt):
 
         genai.configure(api_key=api_key)
 
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        model = genai.GenerativeModel("gemini-pro")
 
         response = model.generate_content(prompt)
 
