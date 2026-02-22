@@ -278,58 +278,102 @@ def categorize_query(query):
         return "cancellation"
     else:
         return "default"
-
-# Placeholder/Mock ask_gemini if not configured
+        
 def ask_gemini(prompt):
-    # This is a mock implementation if genai is not configured or fails
-    # print("Mock Gemini call:", prompt[:100] + "...")
     try:
-        # Attempt to get the real API key from secrets
-        api_key = st.secrets["GOOGLE_API_KEY"]
-        if api_key is None:
-             # print("Warning: Google API Key not found in secrets. Using mock Gemini.")
-             raise ValueError("API key not found in secrets.")
+        # Get API key safely
+        api_key = st.secrets.get("GOOGLE_API_KEY")
 
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY not found in Streamlit secrets.")
 
-        # Re-configure genai with the actual API key if it's not already configured
-        # This handles cases where the script might rerun without the secrets being re-read at the top level
-        try:
-             current_config = genai.configure()
-             if not hasattr(current_config, 'api_key') or current_config.api_key != api_key:
-                  genai.configure(api_key=api_key)
-        except Exception as config_error:
-             print(f"Warning: Could not re-configure genai API key: {config_error}. Proceeding if already configured.")
-             # If re-configuration fails, assume it might be configured from a previous run
+        # Configure Gemini (always configure directly)
+        genai.configure(api_key=api_key)
 
+        # Use stable model (2.5-pro may not work for AI Studio keys)
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
-    except Exception as e:
-        # If API key is not available or genai configuration fails, use mock
-        print(f"Warning: Gemini API not available ({e}). Using mock function.")
-        if "sentiment and urgency" in prompt:
-            if "immediately" in prompt:
-                return "Priority: High"
-            elif "unhappy" in prompt or "damaged" in prompt:
-                 return "Priority: Medium"
-            else:
-                return "Priority: Low"
-        elif "Based on the provided FAQs, answer the user query" in prompt:
-             # Simple keyword matching mock for RAG prompt
-             # This mock needs to return ANSWER: or NO_ANSWER to be consistent with handle_query
-             for doc in docs:
-                 if any(word.lower() in prompt.lower() for word in doc.split()[:5]): # Very basic mock matching
-                      return "ANSWER: " + doc
-             return "NO_ANSWER" # Indicate no answer found in mock
-        return "Mock response: Could not process the request."
-
-
-    # Real Gemini call
-    try:
-        model = genai.GenerativeModel("gemini-2.5-pro")
         response = model.generate_content(prompt)
-        return response.text
+
+        if response and hasattr(response, "text"):
+            return response.text
+        else:
+            raise ValueError("Empty response from Gemini.")
+
     except Exception as e:
-        print(f"Error during real Gemini API call: {e}")
-        return "Error: Could not get response from AI model."
+        # Log real error (important for debugging)
+        print("Gemini API Error:", e)
+
+        # ===== SAFE FALLBACK LOGIC =====
+
+        # Fallback for PRIORITY detection only
+        if "sentiment and urgency" in prompt:
+            prompt_lower = prompt.lower()
+
+            if any(word in prompt_lower for word in ["urgent", "immediately", "asap", "critical"]):
+                return "High"
+            elif any(word in prompt_lower for word in ["damaged", "unhappy", "issue", "problem"]):
+                return "Medium"
+            else:
+                return "Low"
+
+        # Fallback for FAQ RAG
+        if "Based *only* on the FAQs above" in prompt:
+            return "NO_ANSWER"
+
+        return "Error: Gemini API unavailable."
+        
+# Placeholder/Mock ask_gemini if not configured
+# def ask_gemini(prompt):
+#     # This is a mock implementation if genai is not configured or fails
+#     # print("Mock Gemini call:", prompt[:100] + "...")
+#     try:
+#         # Attempt to get the real API key from secrets
+#         api_key = st.secrets["GOOGLE_API_KEY"]
+#         if api_key is None:
+#              # print("Warning: Google API Key not found in secrets. Using mock Gemini.")
+#              raise ValueError("API key not found in secrets.")
+
+
+#         # Re-configure genai with the actual API key if it's not already configured
+#         # This handles cases where the script might rerun without the secrets being re-read at the top level
+#         try:
+#              current_config = genai.configure()
+#              if not hasattr(current_config, 'api_key') or current_config.api_key != api_key:
+#                   genai.configure(api_key=api_key)
+#         except Exception as config_error:
+#              print(f"Warning: Could not re-configure genai API key: {config_error}. Proceeding if already configured.")
+#              # If re-configuration fails, assume it might be configured from a previous run
+
+
+#     except Exception as e:
+#         # If API key is not available or genai configuration fails, use mock
+#         print(f"Warning: Gemini API not available ({e}). Using mock function.")
+#         if "sentiment and urgency" in prompt:
+#             if "immediately" in prompt:
+#                 return "Priority: High"
+#             elif "unhappy" in prompt or "damaged" in prompt:
+#                  return "Priority: Medium"
+#             else:
+#                 return "Priority: Low"
+#         elif "Based on the provided FAQs, answer the user query" in prompt:
+#              # Simple keyword matching mock for RAG prompt
+#              # This mock needs to return ANSWER: or NO_ANSWER to be consistent with handle_query
+#              for doc in docs:
+#                  if any(word.lower() in prompt.lower() for word in doc.split()[:5]): # Very basic mock matching
+#                       return "ANSWER: " + doc
+#              return "NO_ANSWER" # Indicate no answer found in mock
+#         return "Mock response: Could not process the request."
+
+
+#     # Real Gemini call
+#     try:
+#         model = genai.GenerativeModel("gemini-2.5-pro")
+#         response = model.generate_content(prompt)
+#         return response.text
+#     except Exception as e:
+#         print(f"Error during real Gemini API call: {e}")
+#         return "Error: Could not get response from AI model."
 
 
 def determine_priority(query):
