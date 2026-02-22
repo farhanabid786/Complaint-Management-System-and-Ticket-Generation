@@ -2,5 +2,4 @@ streamlit
 scikit-learn
 numpy
 faiss-cpu
-google-genai>=0.3.0
-
+google-genai==0.3.2
