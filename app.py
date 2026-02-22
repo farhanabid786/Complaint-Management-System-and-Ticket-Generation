@@ -281,47 +281,25 @@ def categorize_query(query):
         
 def ask_gemini(prompt):
     try:
-        # Get API key safely
         api_key = st.secrets.get("GOOGLE_API_KEY")
 
         if not api_key:
             raise ValueError("GOOGLE_API_KEY not found in Streamlit secrets.")
 
-        # Configure Gemini (always configure directly)
         genai.configure(api_key=api_key)
 
-        # Use stable model (2.5-pro may not work for AI Studio keys)
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         response = model.generate_content(prompt)
 
-        if response and hasattr(response, "text"):
-            return response.text
+        if response and response.text:
+            return response.text.strip()
         else:
-            raise ValueError("Empty response from Gemini.")
+            return None
 
     except Exception as e:
-        # Log real error (important for debugging)
         print("Gemini API Error:", e)
-
-        # ===== SAFE FALLBACK LOGIC =====
-
-        # Fallback for PRIORITY detection only
-        if "sentiment and urgency" in prompt:
-            prompt_lower = prompt.lower()
-
-            if any(word in prompt_lower for word in ["urgent", "immediately", "asap", "critical"]):
-                return "High"
-            elif any(word in prompt_lower for word in ["damaged", "unhappy", "issue", "problem"]):
-                return "Medium"
-            else:
-                return "Low"
-
-        # Fallback for FAQ RAG
-        if "Based *only* on the FAQs above" in prompt:
-            return "NO_ANSWER"
-
-        return "Error: Gemini API unavailable."
+        return None
         
 # Placeholder/Mock ask_gemini if not configured
 # def ask_gemini(prompt):
@@ -376,40 +354,71 @@ def ask_gemini(prompt):
 #         return "Error: Could not get response from AI model."
 
 
+# def determine_priority(query):
+#     # Use Gemini for sentiment and priority determination
+#     prompt = f"""Analyze the sentiment and urgency of the following user support query. Based on the analysis, assign a priority level: 'High', 'Medium', or 'Low'.
+
+# Consider these factors:
+# - Keywords indicating urgency (e.g., urgent, immediately, critical, ASAP, important).
+# - Overall sentiment (e.g., frustration, anger, satisfaction).
+
+# Examples:
+# Query: My order hasn't arrived and I need it immediately.
+# Priority: High
+
+# Query: Can you tell me about your return policy?
+# Priority: Low
+
+# Query: My recent purchase is damaged and I'm very unhappy.
+# Priority: Medium
+
+# Query: {query}
+# Priority:"""
+#     try:
+#         response = ask_gemini(prompt)
+#         # Attempt to extract priority from Gemini's response
+#         response_lower = response.strip().lower()
+#         if "high" in response_lower:
+#             return "High"
+#         elif "medium" in response_lower:
+#             return "Medium"
+#         else:
+#             return "Low" # Default to Low if not explicitly High or Medium
+#     except Exception as e:
+#         print(f"Error determining priority with Gemini: {e}")
+#         return "Low" # Default to Low in case of error
 def determine_priority(query):
-    # Use Gemini for sentiment and priority determination
-    prompt = f"""Analyze the sentiment and urgency of the following user support query. Based on the analysis, assign a priority level: 'High', 'Medium', or 'Low'.
 
-Consider these factors:
-- Keywords indicating urgency (e.g., urgent, immediately, critical, ASAP, important).
-- Overall sentiment (e.g., frustration, anger, satisfaction).
+    prompt = f"""
+Classify the following complaint into:
+High
+Medium
+Low
 
-Examples:
-Query: My order hasn't arrived and I need it immediately.
-Priority: High
+Rules:
+- High → urgent, angry, financial loss
+- Medium → damaged, unhappy
+- Low → general inquiry
 
-Query: Can you tell me about your return policy?
-Priority: Low
+Respond with ONLY one word.
 
-Query: My recent purchase is damaged and I'm very unhappy.
-Priority: Medium
+Complaint:
+{query}
+"""
 
-Query: {query}
-Priority:"""
-    try:
-        response = ask_gemini(prompt)
-        # Attempt to extract priority from Gemini's response
-        response_lower = response.strip().lower()
-        if "high" in response_lower:
-            return "High"
-        elif "medium" in response_lower:
-            return "Medium"
-        else:
-            return "Low" # Default to Low if not explicitly High or Medium
-    except Exception as e:
-        print(f"Error determining priority with Gemini: {e}")
-        return "Low" # Default to Low in case of error
+    response = ask_gemini(prompt)
 
+    if not response:
+        return "Medium"
+
+    response_lower = response.lower()
+
+    if "high" in response_lower:
+        return "High"
+    elif "medium" in response_lower:
+        return "Medium"
+    else:
+        return "Low"
 
 def assign_agent(category, skills_required=None): # Modified to include skills
     agents = get_agents_by_category(category) # Get agents from DB
@@ -496,55 +505,89 @@ docs = [
 #     return docs[I[0][0]]
 
 
-def handle_query(user_query, email=None): # Changed username to email
-    # Comprehensive prompt for Gemini to act as RAG
-    prompt = f"""You are a helpful support assistant for a complaint management system.
-You have access to a list of frequently asked questions (FAQs) and their answers.
-Your primary goal is to answer the user's query based *only* on the information available in the provided FAQs.
-If you find a relevant FAQ that directly addresses the user's query, provide the answer from the FAQ.
-If the user's query is not covered by any of the provided FAQs, clearly state that you cannot find the answer in the FAQs and indicate that a ticket needs to be raised.
+# def handle_query(user_query, email=None): # Changed username to email
+#     # Comprehensive prompt for Gemini to act as RAG
+#     prompt = f"""You are a helpful support assistant for a complaint management system.
+# You have access to a list of frequently asked questions (FAQs) and their answers.
+# Your primary goal is to answer the user's query based *only* on the information available in the provided FAQs.
+# If you find a relevant FAQ that directly addresses the user's query, provide the answer from the FAQ.
+# If the user's query is not covered by any of the provided FAQs, clearly state that you cannot find the answer in the FAQs and indicate that a ticket needs to be raised.
 
-Here are the available FAQs:
-{'- '.join(docs)}
+# Here are the available FAQs:
+# {'- '.join(docs)}
 
-User Query: {user_query}
+# User Query: {user_query}
 
-Based *only* on the FAQs above:
-If you can answer the query, provide the answer starting with "ANSWER: ".
-If you cannot answer the query based on the FAQs, respond with "NO_ANSWER".
+# Based *only* on the FAQs above:
+# If you can answer the query, provide the answer starting with "ANSWER: ".
+# If you cannot answer the query based on the FAQs, respond with "NO_ANSWER".
+# """
+
+#     try:
+#         response = ask_gemini(prompt)
+#         response_text = response.strip()
+
+#         if response_text.startswith("ANSWER:"):
+#             answer = response_text.replace("ANSWER:", "").strip()
+#             return {"resolved": True, "answer": answer, "ticket_id": None}
+#         elif response_text == "NO_ANSWER":
+#              if email: # Changed username to email
+#                 ticket_id = raise_ticket(user_query, email) # Pass email
+#                 return {"resolved": False, "ticket_id": ticket_id, "message": f"Could not resolve query from FAQs. Ticket Raised: {ticket_id}"}
+#              else:
+#                  return {"resolved": False, "ticket_id": None, "message": "Could not resolve query from FAQs. Please provide an email to raise a ticket."}
+#         else:
+#              # Handle unexpected responses from Gemini
+#              print(f"Warning: Unexpected response from Gemini: {response_text}")
+#              if email:
+#                   ticket_id = raise_ticket(user_query, email)
+#                   return {"resolved": False, "ticket_id": ticket_id, "message": f"Could not process response from AI. Ticket Raised: {ticket_id}"}
+#              else:
+#                  return {"resolved": False, "ticket_id": None, "message": "Could not process response from AI. Please provide an email to raise a ticket."}
+
+
+#     except Exception as e:
+#         print(f"Error handling query with Gemini prompt: {e}")
+#         if email:
+#              ticket_id = raise_ticket(user_query, email)
+#              return {"resolved": False, "ticket_id": ticket_id, "message": f"An error occurred while processing your query. Ticket Raised: {ticket_id}"}
+#         else:
+#              return {"resolved": False, "ticket_id": None, "message": "An error occurred while processing your query. Please provide an email to raise a ticket."}
+def handle_query(user_query, email=None):
+
+    prompt = f"""
+You are a professional customer support assistant.
+
+Respond clearly and helpfully to the user.
+Try to fully resolve the issue.
+
+User Query:
+{user_query}
 """
 
-    try:
-        response = ask_gemini(prompt)
-        response_text = response.strip()
+    response = ask_gemini(prompt)
 
-        if response_text.startswith("ANSWER:"):
-            answer = response_text.replace("ANSWER:", "").strip()
-            return {"resolved": True, "answer": answer, "ticket_id": None}
-        elif response_text == "NO_ANSWER":
-             if email: # Changed username to email
-                ticket_id = raise_ticket(user_query, email) # Pass email
-                return {"resolved": False, "ticket_id": ticket_id, "message": f"Could not resolve query from FAQs. Ticket Raised: {ticket_id}"}
-             else:
-                 return {"resolved": False, "ticket_id": None, "message": "Could not resolve query from FAQs. Please provide an email to raise a ticket."}
-        else:
-             # Handle unexpected responses from Gemini
-             print(f"Warning: Unexpected response from Gemini: {response_text}")
-             if email:
-                  ticket_id = raise_ticket(user_query, email)
-                  return {"resolved": False, "ticket_id": ticket_id, "message": f"Could not process response from AI. Ticket Raised: {ticket_id}"}
-             else:
-                 return {"resolved": False, "ticket_id": None, "message": "Could not process response from AI. Please provide an email to raise a ticket."}
-
-
-    except Exception as e:
-        print(f"Error handling query with Gemini prompt: {e}")
+    # If API fails → auto raise ticket
+    if not response:
         if email:
-             ticket_id = raise_ticket(user_query, email)
-             return {"resolved": False, "ticket_id": ticket_id, "message": f"An error occurred while processing your query. Ticket Raised: {ticket_id}"}
+            ticket_id = raise_ticket(user_query, email)
+            return {
+                "resolved": False,
+                "ticket_id": ticket_id,
+                "message": f"AI service unavailable. Ticket Raised: {ticket_id}"
+            }
         else:
-             return {"resolved": False, "ticket_id": None, "message": "An error occurred while processing your query. Please provide an email to raise a ticket."}
+            return {
+                "resolved": False,
+                "ticket_id": None,
+                "message": "AI service unavailable."
+            }
 
+    return {
+        "resolved": True,
+        "answer": response,
+        "ticket_id": None
+    }
 
 # --- Real-time Complaint Status Tracking (Database Interaction) ---
 def get_ticket_by_id(ticket_id):
@@ -987,24 +1030,54 @@ def user_page():
     st.sidebar.info("No new notifications.")
     # --- End Notification Placeholder ---
 
+    st.header("Chat with Support AI")
 
-    st.header("Chat with our Support Bot")
-    user_query = st.text_input("Enter your query:", key="user_query_input") # Added a key
-    if st.button("Submit Query", key="submit_query_button"): # Added a key
-        if user_query:
-            result = handle_query(user_query, email=user_email)
-            if result and result.get("resolved"): # Check if result is not None and resolved
-                st.success(f"Answer: {result.get('answer', 'N/A')}") # Use .get for safety
-            elif result: # If result is not None but not resolved
-                 st.info(result.get("message", "Could not resolve query. Ticket might have been raised.")) # Use .get for safety
-                 # You might want to explicitly show the ticket ID if it was raised
-                 if result.get("ticket_id"): # Use .get for safety
-                      st.write(f"Your Ticket ID is: {result['ticket_id']}")
-            else: # Handle case where handle_query returns None or unexpected
-                 st.error("An error occurred while processing your query.")
+user_query = st.text_input("Enter your query:")
+
+if st.button("Submit Query"):
+    if user_query:
+        result = handle_query(user_query, email=user_email)
+
+        if result.get("resolved"):
+            st.success("🤖 AI Response:")
+            st.write(result.get("answer"))
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("👍 Resolved"):
+                    st.success("Glad I could help!")
+
+            with col2:
+                if st.button("👎 Not Satisfied - Raise Ticket"):
+                    ticket_id = raise_ticket(user_query, user_email)
+                    st.warning(f"Ticket Raised Successfully! Ticket ID: {ticket_id}")
 
         else:
-            st.warning("Please enter a query.")
+            st.warning(result.get("message"))
+    else:
+        st.warning("Please enter a query.")
+    # --- End Notification Placeholder ---
+
+
+
+    # st.header("Chat with our Support Bot")
+    # user_query = st.text_input("Enter your query:", key="user_query_input") # Added a key
+    # if st.button("Submit Query", key="submit_query_button"): # Added a key
+    #     if user_query:
+    #         result = handle_query(user_query, email=user_email)
+    #         if result and result.get("resolved"): # Check if result is not None and resolved
+    #             st.success(f"Answer: {result.get('answer', 'N/A')}") # Use .get for safety
+    #         elif result: # If result is not None but not resolved
+    #              st.info(result.get("message", "Could not resolve query. Ticket might have been raised.")) # Use .get for safety
+    #              # You might want to explicitly show the ticket ID if it was raised
+    #              if result.get("ticket_id"): # Use .get for safety
+    #                   st.write(f"Your Ticket ID is: {result['ticket_id']}")
+    #         else: # Handle case where handle_query returns None or unexpected
+    #              st.error("An error occurred while processing your query.")
+
+    #     else:
+    #         st.warning("Please enter a query.")
 
     st.write("---")
 
