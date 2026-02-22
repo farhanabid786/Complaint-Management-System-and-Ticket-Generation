@@ -991,15 +991,24 @@ def registration_page():
 
 
 def user_page():
-    # Add checks for session state variables
-    if st.session_state.get("authenticated") is not True or st.session_state.get("user_email") is None:
-        st.warning("Please log in to access this page.")
-        if st.button("Go to Login", key="user_go_to_login"):
-            st.session_state["page"] = "login"
-            st.rerun()
+    def user_page():
+
+    if st.session_state.get("authenticated") is not True:
+        st.warning("Please log in.")
         return
 
-    user_email = st.session_state["user_email"]
+    user_email = st.session_state.get("user_email")
+
+    st.title(f"Welcome, {user_email}!")
+    # # Add checks for session state variables
+    # if st.session_state.get("authenticated") is not True or st.session_state.get("user_email") is None:
+    #     st.warning("Please log in to access this page.")
+    #     if st.button("Go to Login", key="user_go_to_login"):
+    #         st.session_state["page"] = "login"
+    #         st.rerun()
+    #     return
+
+    # user_email = st.session_state["user_email"]
     # Add an extra check to prevent admin from accessing user page directly
     if user_email == ADMIN_EMAIL:
          st.warning("Admins cannot access the user page.")
