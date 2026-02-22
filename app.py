@@ -989,9 +989,7 @@ def registration_page():
         st.session_state["page"] = "login"
         st.rerun()
 
-
 def user_page():
-    def user_page():
 
     if st.session_state.get("authenticated") is not True:
         st.warning("Please log in.")
