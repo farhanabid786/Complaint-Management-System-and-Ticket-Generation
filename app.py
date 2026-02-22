@@ -989,125 +989,242 @@ def registration_page():
         st.session_state["page"] = "login"
         st.rerun()
 
+# def user_page():
+
+#     if st.session_state.get("authenticated") is not True:
+#         st.warning("Please log in.")
+#         return
+
+#     user_email = st.session_state.get("user_email")
+
+#     st.title(f"Welcome, {user_email}!")
+#     # # Add checks for session state variables
+#     # if st.session_state.get("authenticated") is not True or st.session_state.get("user_email") is None:
+#     #     st.warning("Please log in to access this page.")
+#     #     if st.button("Go to Login", key="user_go_to_login"):
+#     #         st.session_state["page"] = "login"
+#     #         st.rerun()
+#     #     return
+
+#     # user_email = st.session_state["user_email"]
+#     # Add an extra check to prevent admin from accessing user page directly
+#     if user_email == ADMIN_EMAIL:
+#          st.warning("Admins cannot access the user page.")
+#          if st.button("Go to Admin Dashboard", key="user_go_to_admin"):
+#               st.session_state["page"] = "admin"
+#               st.rerun()
+#          return
+
+
+#     # Add a logout button
+#     if st.button("Logout", key="user_logout_button"):
+#         st.session_state["authenticated"] = False
+#         st.session_state["user_email"] = None
+#         st.session_state["page"] = "login"
+#         st.rerun()
+
+#     # --- Placeholder for Notification Display ---
+#     # In a full implementation, this area could display recent notifications
+#     # fetched from a state variable or a dedicated notification system.
+#     st.sidebar.header("Notifications")
+#     # Example placeholder:
+#     # if "notifications" in st.session_state and st.session_state["notifications"]:
+#     #     for notif in st.session_state["notifications"]:
+#     #         st.sidebar.info(notif)
+#     # else:
+#     st.sidebar.info("No new notifications.")
+#     # --- End Notification Placeholder ---
+
+#     st.header("Chat with Support AI")
+#     user_query = st.text_input("Enter your query:")
+#     if st.button("Submit Query"):
+#         if user_query:
+#             result = handle_query(user_query, email=user_email)
+
+#             if result.get("resolved"):
+#                 st.success("🤖 AI Response:")
+#                 st.write(result.get("answer"))
+
+#                 col1, col2 = st.columns(2)
+
+#                 with col1:
+#                     if st.button("👍 Resolved"):
+#                         st.success("Glad I could help!")
+
+#                 with col2:
+#                     if st.button("👎 Not Satisfied - Raise Ticket"):
+#                         ticket_id = raise_ticket(user_query, user_email)
+#                         st.warning(f"Ticket Raised Successfully! Ticket ID: {ticket_id}")
+#             else:
+#                 st.warning(result.get("message"))
+#         else:
+#             st.warning("Please enter a query.")
+#     # --- End Notification Placeholder ---
+
+
+
+#     # st.header("Chat with our Support Bot")
+#     # user_query = st.text_input("Enter your query:", key="user_query_input") # Added a key
+#     # if st.button("Submit Query", key="submit_query_button"): # Added a key
+#     #     if user_query:
+#     #         result = handle_query(user_query, email=user_email)
+#     #         if result and result.get("resolved"): # Check if result is not None and resolved
+#     #             st.success(f"Answer: {result.get('answer', 'N/A')}") # Use .get for safety
+#     #         elif result: # If result is not None but not resolved
+#     #              st.info(result.get("message", "Could not resolve query. Ticket might have been raised.")) # Use .get for safety
+#     #              # You might want to explicitly show the ticket ID if it was raised
+#     #              if result.get("ticket_id"): # Use .get for safety
+#     #                   st.write(f"Your Ticket ID is: {result['ticket_id']}")
+#     #         else: # Handle case where handle_query returns None or unexpected
+#     #              st.error("An error occurred while processing your query.")
+
+#     #     else:
+#     #         st.warning("Please enter a query.")
+
+#     st.write("---")
+
+#     st.header("My Tickets")
+#     st.text(view_my_tickets(user_email)) # Directly display returned string
+
+#     st.write("---")
+
+#     st.header("Track a Ticket")
+#     track_ticket_id = st.text_input("Enter Ticket ID to Track:", key="track_ticket_input") # Added a key
+#     if st.button("Track Ticket", key="track_ticket_button"): # Added a key
+#         if track_ticket_id:
+#             st.write(f"Tracking Ticket ID: {track_ticket_id}")
+#             st.text(track_ticket(track_ticket_id)) # Directly display returned string
+#         else:
+#             st.warning("Please enter a Ticket ID.")
+
+#     st.write("---")
+
+#     st.header("Provide Feedback")
+#     feedback_ticket_id = st.text_input("Enter Ticket ID for Feedback:", key="feedback_ticket_input") # Added a key
+#     feedback_text = st.text_area("Your Feedback:", key="feedback_text_input") # Added a key
+#     if st.button("Submit Feedback", key="submit_feedback_button"): # Added a key
+#         if feedback_ticket_id and feedback_text:
+#             success, message = provide_feedback(feedback_ticket_id, feedback_text)
+#             if success:
+#                 st.success(message)
+#             else:
+#                 st.error(message)
+#         else:
+#             st.warning("Please enter both Ticket ID and feedback.")
+
+#     st.write("---")
+
+#     # --- Display FAQs ---
+#     st.header("Frequently Asked Questions (FAQs)")
+#     # Access the global docs list from the main script
+#     # global docs
+#     if docs: # Check if docs list is not empty
+#         for i, faq in enumerate(docs):
+#             # Split FAQ into question and answer for better formatting if possible
+#             if "?" in faq:
+#                 parts = faq.split("?", 1)
+#                 st.write(f"**Q{i+1}:** {parts[0]}?")
+#                 if len(parts) > 1 and parts[1].strip():
+#                     st.write(f"**A{i+1}:** {parts[1].strip()}")
+#             else:
+#                  st.write(f"**Q{i+1}:** {faq}") # Display as is if no '?'
+#     else:
+#         st.info("No FAQs available at this time.")
+
 def user_page():
 
-    if st.session_state.get("authenticated") is not True:
+    # Authentication check
+    if not st.session_state.get("authenticated"):
         st.warning("Please log in.")
         return
 
-    user_email = st.session_state.get("user_email")
+    # Always get email safely
+    current_email = st.session_state.get("user_email")
 
-    st.title(f"Welcome, {user_email}!")
-    # # Add checks for session state variables
-    # if st.session_state.get("authenticated") is not True or st.session_state.get("user_email") is None:
-    #     st.warning("Please log in to access this page.")
-    #     if st.button("Go to Login", key="user_go_to_login"):
-    #         st.session_state["page"] = "login"
-    #         st.rerun()
-    #     return
+    if not current_email:
+        st.warning("Session expired. Please log in again.")
+        return
 
-    # user_email = st.session_state["user_email"]
-    # Add an extra check to prevent admin from accessing user page directly
-    if user_email == ADMIN_EMAIL:
-         st.warning("Admins cannot access the user page.")
-         if st.button("Go to Admin Dashboard", key="user_go_to_admin"):
-              st.session_state["page"] = "admin"
-              st.rerun()
-         return
+    # Prevent admin from accessing user page
+    if current_email == ADMIN_EMAIL:
+        st.warning("Admins cannot access the user page.")
+        if st.button("Go to Admin Dashboard"):
+            st.session_state["page"] = "admin"
+            st.rerun()
+        return
 
+    st.title(f"Welcome, {current_email}!")
 
-    st.title(f"Welcome, {user_email}!")
-
-    # Add a logout button
-    if st.button("Logout", key="user_logout_button"):
+    # Logout
+    if st.button("Logout"):
         st.session_state["authenticated"] = False
         st.session_state["user_email"] = None
         st.session_state["page"] = "login"
         st.rerun()
 
-    # --- Placeholder for Notification Display ---
-    # In a full implementation, this area could display recent notifications
-    # fetched from a state variable or a dedicated notification system.
+    # Sidebar notifications
     st.sidebar.header("Notifications")
-    # Example placeholder:
-    # if "notifications" in st.session_state and st.session_state["notifications"]:
-    #     for notif in st.session_state["notifications"]:
-    #         st.sidebar.info(notif)
-    # else:
     st.sidebar.info("No new notifications.")
-    # --- End Notification Placeholder ---
+
+    # ---------------- CHATBOT SECTION ----------------
 
     st.header("Chat with Support AI")
 
-user_query = st.text_input("Enter your query:")
+    user_query = st.text_input("Enter your query:", key="user_query_input")
 
-if st.button("Submit Query"):
-    if user_query:
-        result = handle_query(user_query, email=user_email)
+    if st.button("Submit Query", key="submit_query_button"):
 
-        if result.get("resolved"):
-            st.success("🤖 AI Response:")
-            st.write(result.get("answer"))
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                if st.button("👍 Resolved"):
-                    st.success("Glad I could help!")
-
-            with col2:
-                if st.button("👎 Not Satisfied - Raise Ticket"):
-                    ticket_id = raise_ticket(user_query, user_email)
-                    st.warning(f"Ticket Raised Successfully! Ticket ID: {ticket_id}")
-
+        if not user_query:
+            st.warning("Please enter a query.")
         else:
-            st.warning(result.get("message"))
-    else:
-        st.warning("Please enter a query.")
-    # --- End Notification Placeholder ---
+            result = handle_query(user_query, email=current_email)
 
+            if result.get("resolved"):
 
+                st.success("🤖 AI Response:")
+                st.write(result.get("answer"))
 
-    # st.header("Chat with our Support Bot")
-    # user_query = st.text_input("Enter your query:", key="user_query_input") # Added a key
-    # if st.button("Submit Query", key="submit_query_button"): # Added a key
-    #     if user_query:
-    #         result = handle_query(user_query, email=user_email)
-    #         if result and result.get("resolved"): # Check if result is not None and resolved
-    #             st.success(f"Answer: {result.get('answer', 'N/A')}") # Use .get for safety
-    #         elif result: # If result is not None but not resolved
-    #              st.info(result.get("message", "Could not resolve query. Ticket might have been raised.")) # Use .get for safety
-    #              # You might want to explicitly show the ticket ID if it was raised
-    #              if result.get("ticket_id"): # Use .get for safety
-    #                   st.write(f"Your Ticket ID is: {result['ticket_id']}")
-    #         else: # Handle case where handle_query returns None or unexpected
-    #              st.error("An error occurred while processing your query.")
+                col1, col2 = st.columns(2)
 
-    #     else:
-    #         st.warning("Please enter a query.")
+                with col1:
+                    if st.button("👍 Resolved", key="resolved_btn"):
+                        st.success("Glad I could help!")
+
+                with col2:
+                    if st.button("👎 Not Satisfied - Raise Ticket", key="raise_ticket_btn"):
+                        ticket_id = raise_ticket(user_query, current_email)
+                        st.warning(f"Ticket Raised Successfully! Ticket ID: {ticket_id}")
+
+            else:
+                # API failure case
+                st.warning(result.get("message"))
+                if result.get("ticket_id"):
+                    st.info(f"Ticket ID: {result.get('ticket_id')}")
+
+    # ---------------- TICKET SECTION ----------------
 
     st.write("---")
-
     st.header("My Tickets")
-    st.text(view_my_tickets(user_email)) # Directly display returned string
+    st.text(view_my_tickets(current_email))
 
     st.write("---")
-
     st.header("Track a Ticket")
-    track_ticket_id = st.text_input("Enter Ticket ID to Track:", key="track_ticket_input") # Added a key
-    if st.button("Track Ticket", key="track_ticket_button"): # Added a key
+
+    track_ticket_id = st.text_input("Enter Ticket ID to Track:", key="track_ticket_input")
+
+    if st.button("Track Ticket", key="track_ticket_button"):
         if track_ticket_id:
-            st.write(f"Tracking Ticket ID: {track_ticket_id}")
-            st.text(track_ticket(track_ticket_id)) # Directly display returned string
+            st.text(track_ticket(track_ticket_id))
         else:
             st.warning("Please enter a Ticket ID.")
 
     st.write("---")
-
     st.header("Provide Feedback")
-    feedback_ticket_id = st.text_input("Enter Ticket ID for Feedback:", key="feedback_ticket_input") # Added a key
-    feedback_text = st.text_area("Your Feedback:", key="feedback_text_input") # Added a key
-    if st.button("Submit Feedback", key="submit_feedback_button"): # Added a key
+
+    feedback_ticket_id = st.text_input("Enter Ticket ID for Feedback:", key="feedback_ticket_input")
+    feedback_text = st.text_area("Your Feedback:", key="feedback_text_input")
+
+    if st.button("Submit Feedback", key="submit_feedback_button"):
         if feedback_ticket_id and feedback_text:
             success, message = provide_feedback(feedback_ticket_id, feedback_text)
             if success:
@@ -1117,26 +1234,23 @@ if st.button("Submit Query"):
         else:
             st.warning("Please enter both Ticket ID and feedback.")
 
-    st.write("---")
+    # ---------------- FAQ SECTION ----------------
 
-    # --- Display FAQs ---
+    st.write("---")
     st.header("Frequently Asked Questions (FAQs)")
-    # Access the global docs list from the main script
-    # global docs
-    if docs: # Check if docs list is not empty
+
+    if docs:
         for i, faq in enumerate(docs):
-            # Split FAQ into question and answer for better formatting if possible
             if "?" in faq:
                 parts = faq.split("?", 1)
                 st.write(f"**Q{i+1}:** {parts[0]}?")
                 if len(parts) > 1 and parts[1].strip():
                     st.write(f"**A{i+1}:** {parts[1].strip()}")
             else:
-                 st.write(f"**Q{i+1}:** {faq}") # Display as is if no '?'
+                st.write(f"**Q{i+1}:** {faq}")
     else:
         st.info("No FAQs available at this time.")
-
-
+        
 def admin_page():
     # Add checks for session state variables
     if st.session_state.get("authenticated") is not True or st.session_state.get("user_email") is None or st.session_state.get("user_email") != ADMIN_EMAIL:
