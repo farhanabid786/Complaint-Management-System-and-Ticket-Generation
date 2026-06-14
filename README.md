@@ -404,8 +404,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Mudit** 
 - GitHub: [@MuditIsOP](https://github.com/MuditIsOP)
+  
 **FARHAN**
-- GitHub: [@MuditIsOP](https://github.com/farhanabid786)
+  
+- GitHub: [@farhanabid786](https://github.com/farhanabid786)
 
 
 - Project Link: [https://github.com/MuditIsOP/ibm](https://github.com/MuditIsOP/ibm)
